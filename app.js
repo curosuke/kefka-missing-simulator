@@ -79,7 +79,7 @@ const STRATEGIES = {
 const SPREAD_METHODS = {
   kt: {
     name: "KT式",
-    description: "既存の散開位置。奇数回は左右の塔へ寄せ、偶数回は内側扇と外側円で処理します。",
+    description: "奇数回は左右の塔へ寄せ、偶数回は内側扇と外側円で処理します。",
   },
   ktdn: {
     name: "KTDN式",
