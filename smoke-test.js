@@ -248,19 +248,26 @@ async function run() {
       const afterStrategy = UI.roleSelection.classList.contains("hidden");
       const spreadAfterStrategy = UI.spreadSelection.classList.contains("hidden");
       selectSpread("ktdnPiren");
+      const initialShareVisible = !UI.initialShareSelection.classList.contains("hidden");
       const afterSpread = UI.roleSelection.classList.contains("hidden");
       const pair = pairIdFor("MT", "yarn");
       return {
-        ok: before && spreadBefore && afterStrategy && !spreadAfterStrategy && !afterSpread &&
+        ok: before && spreadBefore && afterStrategy && !spreadAfterStrategy &&
+          initialShareVisible && !afterSpread &&
           selectedStrategy === "yarn" && selectedSpread === "ktdnPiren" && pair === "H1" &&
-          UI.strategyName.textContent.includes("ヤーン式") && UI.strategyName.textContent.includes("KTDNぴれん式"),
+          selectedInitialShareMode === "fixed" &&
+          UI.strategyName.textContent.includes("ヤーン式") &&
+          UI.strategyName.textContent.includes("KTDNぴれん式") &&
+          !UI.strategyDescription.textContent.includes("左がTH、右がDPSで固定"),
         before,
         spreadBefore,
         afterStrategy,
         spreadAfterStrategy,
+        initialShareVisible,
         afterSpread,
         selectedStrategy,
         selectedSpread,
+        selectedInitialShareMode,
         pair,
       };
     })())`,
@@ -307,7 +314,9 @@ async function run() {
     expression: `JSON.stringify((() => {
       const originalPlayers = state.players;
       const originalSpread = state.spread;
+      const originalInitialShareMode = state.initialShareMode;
       state.spread = "ktdn";
+      state.initialShareMode = "pair";
       state.players = [
         { id: "MT", group: "A", marks: { 1: "share" }, role: { category: "tank" }, flippedRounds: new Set() },
         { id: "H1", group: "B", marks: { 4: "circle" }, role: { category: "healer" }, flippedRounds: new Set() },
@@ -318,6 +327,7 @@ async function run() {
       const d1Tower = assignmentFor(state.players[2], 1, "ktdn")?.tower;
       state.players = originalPlayers;
       state.spread = originalSpread;
+      state.initialShareMode = originalInitialShareMode;
       return {
         ok: mtTower === 0 && d1Tower === 1,
         mtTower,
@@ -330,11 +340,43 @@ async function run() {
   if (!ktdnInitialPair.ok) {
     throw new Error(`Invalid KTDN opening pair handling: ${JSON.stringify(ktdnInitialPair)}`);
   }
+  const ktdnInitialFixedResult = await send("Runtime.evaluate", {
+    expression: `JSON.stringify((() => {
+      const originalPlayers = state.players;
+      const originalSpread = state.spread;
+      const originalInitialShareMode = state.initialShareMode;
+      state.spread = "ktdn";
+      state.initialShareMode = "fixed";
+      state.players = [
+        { id: "MT", group: "A", marks: { 1: "share" }, role: { category: "tank" }, flippedRounds: new Set() },
+        { id: "H1", group: "B", marks: { 1: "circle" }, role: { category: "healer" }, flippedRounds: new Set() },
+        { id: "D1", group: "A", marks: { 1: "share" }, role: { category: "melee" }, flippedRounds: new Set() },
+        { id: "D3", group: "B", marks: { 1: "fan" }, role: { category: "ranged" }, flippedRounds: new Set() },
+      ];
+      const mtTower = assignmentFor(state.players[0], 1, "ktdn")?.tower;
+      const d1Tower = assignmentFor(state.players[2], 1, "ktdn")?.tower;
+      state.players = originalPlayers;
+      state.spread = originalSpread;
+      state.initialShareMode = originalInitialShareMode;
+      return {
+        ok: mtTower === 0 && d1Tower === 1,
+        mtTower,
+        d1Tower,
+      };
+    })())`,
+    returnByValue: true,
+  });
+  const ktdnInitialFixed = JSON.parse(ktdnInitialFixedResult.result.value);
+  if (!ktdnInitialFixed.ok) {
+    throw new Error(`Invalid KTDN fixed opening pair handling: ${JSON.stringify(ktdnInitialFixed)}`);
+  }
   const ktdnPirenInitialPairResult = await send("Runtime.evaluate", {
     expression: `JSON.stringify((() => {
       const originalPlayers = state.players;
       const originalSpread = state.spread;
+      const originalInitialShareMode = state.initialShareMode;
       state.spread = "ktdnPiren";
+      state.initialShareMode = "pair";
       state.players = [
         { id: "MT", group: "A", marks: { 1: "share" }, role: { category: "tank" }, towerOverrides: new Map() },
         { id: "H1", group: "B", marks: { 4: "circle" }, role: { category: "healer" }, towerOverrides: new Map() },
@@ -345,6 +387,7 @@ async function run() {
       const d1Assignment = assignmentFor(state.players[2], 1, "ktdnPiren");
       state.players = originalPlayers;
       state.spread = originalSpread;
+      state.initialShareMode = originalInitialShareMode;
       return {
         ok: mtAssignment?.tower === 0 && d1Assignment?.tower === 1 &&
           mtAssignment?.name === "塔1・縦頭割り" && d1Assignment?.name === "塔2・縦頭割り",

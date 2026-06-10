@@ -16,6 +16,8 @@ const UI = {
   strategyButtons: document.getElementById("strategyButtons"),
   spreadSelection: document.getElementById("spreadSelection"),
   spreadButtons: document.getElementById("spreadButtons"),
+  initialShareSelection: document.getElementById("initialShareSelection"),
+  initialShareButtons: document.getElementById("initialShareButtons"),
   roleSelection: document.getElementById("roleSelection"),
   roleButtons: document.getElementById("roleButtons"),
   strategyName: document.getElementById("strategyName"),
@@ -83,15 +85,23 @@ const SPREAD_METHODS = {
   },
   ktdn: {
     name: "KTDN式",
-    description: "初回の頭割りはTH左・DPS右で塔を判断し、4回目の円扇判断だけ遠隔左・近接右を使います。2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。",
+    description: "4回目の円扇判断だけ遠隔左・近接右を使います。2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。",
   },
   ktdnPiren: {
     name: "KTDNぴれん式",
-    description: "初回の頭割りはTH左・DPS右で塔を判断し、優先度判断はKTDN式のまま、立ち位置だけぴれん式の座標を使います。",
+    description: "優先度判断はKTDN式のまま、立ち位置だけぴれん式の座標を使います。",
   },
   piren: {
     name: "ぴれん式",
     description: "図を基準に、奇数回は塔周辺の縦配置、偶数回は左右対称の上下配置で処理します。",
+  },
+};
+const INITIAL_SHARE_MODES = {
+  pair: {
+    label: "ペアが扇なら左塔、ペアが円なら右塔",
+  },
+  fixed: {
+    label: "左がTH、右がDPSで固定",
   },
 };
 const GROUP_ROUNDS = { A: [1, 2, 3, 8], B: [4, 5, 6, 7] };
@@ -142,9 +152,11 @@ let state = {
   bannerUntil: 0,
   strategy: null,
   spread: null,
+  initialShareMode: "pair",
 };
 let selectedStrategy = null;
 let selectedSpread = null;
+let selectedInitialShareMode = null;
 
 if (querySpeed > 0) {
   if (![...UI.speed.options].some((option) => Number(option.value) === querySpeed)) {
@@ -276,12 +288,39 @@ function selectStrategy(strategy) {
   UI.selectionTitle.textContent = STRATEGIES[strategy].name;
   UI.selectionCopy.textContent = "次に、塔処理時の散開位置を選択してください。";
   selectedSpread = null;
+  selectedInitialShareMode = null;
   for (const button of UI.spreadButtons.querySelectorAll(".spread-button")) {
     button.classList.remove("selected");
     button.setAttribute("aria-pressed", "false");
   }
+  for (const option of UI.initialShareButtons.querySelectorAll(".radio-option")) {
+    option.classList.remove("selected");
+    const input = option.querySelector('input[type="radio"]');
+    if (input) input.checked = false;
+  }
   UI.spreadSelection.classList.remove("hidden");
+  UI.initialShareSelection.classList.add("hidden");
   UI.roleSelection.classList.add("hidden");
+}
+
+function isKtdnSpread(spread) {
+  return spread === "ktdn" || spread === "ktdnPiren";
+}
+
+function selectInitialShareMode(mode) {
+  if (!isKtdnSpread(selectedSpread) || !INITIAL_SHARE_MODES[mode]) return;
+  selectedInitialShareMode = mode;
+  for (const option of UI.initialShareButtons.querySelectorAll(".radio-option")) {
+    const input = option.querySelector('input[type="radio"]');
+    const selected = input?.value === mode;
+    option.classList.toggle("selected", selected);
+    if (input) input.checked = selected;
+  }
+  UI.selectionTitle.textContent = "担当ロールを選択";
+  UI.selectionCopy.textContent = "残りの7人は自動で正解位置へ移動します。あなたの担当だけを操作してください。";
+  UI.strategyName.textContent = `${STRATEGIES[selectedStrategy].name} / ${SPREAD_METHODS[selectedSpread].name} · 1238 / 4567`;
+  updateStrategyDescription();
+  UI.roleSelection.classList.remove("hidden");
 }
 
 function selectSpread(spread) {
@@ -292,19 +331,37 @@ function selectSpread(spread) {
     button.classList.toggle("selected", selected);
     button.setAttribute("aria-pressed", String(selected));
   }
-  UI.selectionTitle.textContent = "担当ロールを選択";
-  UI.selectionCopy.textContent = "残りの7人は自動で正解位置へ移動します。あなたの担当だけを操作してください。";
-  UI.strategyName.textContent = `${STRATEGIES[selectedStrategy].name} / ${SPREAD_METHODS[spread].name} · 1238 / 4567`;
-  UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${SPREAD_METHODS[spread].description}`;
-  UI.roleSelection.classList.remove("hidden");
+  for (const option of UI.initialShareButtons.querySelectorAll(".radio-option")) {
+    option.classList.remove("selected");
+    const input = option.querySelector('input[type="radio"]');
+    if (input) input.checked = false;
+  }
+  if (isKtdnSpread(spread)) {
+    UI.selectionTitle.textContent = "1回目の頭割り処理法を選択";
+    UI.selectionCopy.textContent = "KTDN系は、1回目の頭割りだけ入る塔の優先度を選べます。";
+    UI.strategyName.textContent = `${STRATEGIES[selectedStrategy].name} / ${SPREAD_METHODS[spread].name} · 1238 / 4567`;
+    UI.initialShareSelection.classList.remove("hidden");
+    selectInitialShareMode("fixed");
+  } else {
+    selectedInitialShareMode = null;
+    UI.roleSelection.classList.add("hidden");
+    UI.selectionTitle.textContent = "担当ロールを選択";
+    UI.selectionCopy.textContent = "残りの7人は自動で正解位置へ移動します。あなたの担当だけを操作してください。";
+    UI.strategyName.textContent = `${STRATEGIES[selectedStrategy].name} / ${SPREAD_METHODS[spread].name} · 1238 / 4567`;
+    UI.initialShareSelection.classList.add("hidden");
+    UI.roleSelection.classList.remove("hidden");
+    updateStrategyDescription();
+  }
 }
 
 function resetSelection() {
   selectedStrategy = null;
   selectedSpread = null;
+  selectedInitialShareMode = null;
   UI.selectionTitle.textContent = "攻略法を選択";
   UI.selectionCopy.textContent = "最初の先組・後組の決め方を選択してください。";
   UI.spreadSelection.classList.add("hidden");
+  UI.initialShareSelection.classList.add("hidden");
   UI.roleSelection.classList.add("hidden");
   for (const button of UI.strategyButtons.querySelectorAll(".strategy-button")) {
     button.classList.remove("selected");
@@ -313,6 +370,11 @@ function resetSelection() {
   for (const button of UI.spreadButtons.querySelectorAll(".spread-button")) {
     button.classList.remove("selected");
     button.setAttribute("aria-pressed", "false");
+  }
+  for (const option of UI.initialShareButtons.querySelectorAll(".radio-option")) {
+    option.classList.remove("selected");
+    const input = option.querySelector('input[type="radio"]');
+    if (input) input.checked = false;
   }
 }
 
@@ -324,6 +386,25 @@ function pairIdFor(playerId, strategy) {
 
 function pairGroupsFor(strategy) {
   return strategy === "yarn" ? YARN_PAIRS : PAIRS;
+}
+
+function initialShareClause(mode) {
+  return mode === "pair"
+    ? "初回の頭割りは、ペアが扇なら左塔、ペアが円なら右塔。"
+    : "初回の頭割りは、左がTH、右がDPSで固定。";
+}
+
+function ktdnSpreadDescription() {
+  const initialClause = initialShareClause(selectedInitialShareMode || "fixed");
+  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。`;
+}
+
+function updateStrategyDescription() {
+  if (!selectedStrategy || !selectedSpread) return;
+  const base = `${STRATEGIES[selectedStrategy].description} ${SPREAD_METHODS[selectedSpread].description}`;
+  UI.strategyDescription.textContent = selectedSpread === "ktdn"
+    ? `${STRATEGIES[selectedStrategy].description} ${ktdnSpreadDescription()}`
+    : base;
 }
 
 function startGame(playerId, strategy = "lean", spread = "kt") {
@@ -351,6 +432,7 @@ function startGame(playerId, strategy = "lean", spread = "kt") {
     bannerUntil: 0,
     strategy: activeStrategy,
     spread: activeSpread,
+    initialShareMode: selectedInitialShareMode || "pair",
   };
   const player = getPlayer();
   player.x = 400;
@@ -379,8 +461,13 @@ function towerInfo(round) {
   return { round, group, odd: round % 2 === 1, time: TOWER_TIMES[round - 1] };
 }
 
-function ktdnInitialShareTower(player) {
-  return ["tank", "healer"].includes(player.role.category) ? 0 : 1;
+function ktdnInitialShareTower(player, mode = state.initialShareMode || "pair") {
+  if (mode === "fixed") {
+    return ["tank", "healer"].includes(player.role.category) ? 0 : 1;
+  }
+  const partnerId = YARN_PAIRS.find((pair) => pair.includes(player.id))?.find((id) => id !== player.id);
+  const partner = partnerId ? state.players.find((member) => member.id === partnerId) : null;
+  return partner && markForRound(partner, 1) === "fan" ? 0 : 1;
 }
 
 function usesKtdnPriority(spread) {
@@ -1422,6 +1509,10 @@ UI.strategyButtons.addEventListener("click", (event) => {
 UI.spreadButtons.addEventListener("click", (event) => {
   const button = event.target.closest(".spread-button");
   if (button) selectSpread(button.dataset.spread);
+});
+UI.initialShareButtons.addEventListener("change", (event) => {
+  const input = event.target.closest('input[type="radio"]');
+  if (input) selectInitialShareMode(input.value);
 });
 setupRoleButtons();
 setupTimeline();

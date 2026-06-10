@@ -101,16 +101,35 @@
             </button>
             <button class="strategy-button spread-button" data-spread="ktdn">
               <strong>KTDN式</strong>
-              <span>初回の頭割りはTH左・DPS右、4回目だけ遠隔左・近接右。8回目は左stop1/bind1・右stop2/bind2</span>
+              <span>初回の頭割りは選択式。4回目だけ遠隔左・近接右。8回目は左stop1/bind1・右stop2/bind2</span>
             </button>
             <button class="strategy-button spread-button" data-spread="ktdnPiren">
               <strong>KTDNぴれん式</strong>
-              <span>初回の頭割りはTH左・DPS右、KTDN式の優先度判断のまま、立ち位置だけぴれん式</span>
+              <span>初回の頭割りは選択式。KTDN式の優先度判断のまま、立ち位置だけぴれん式</span>
             </button>
             <button class="strategy-button spread-button" data-spread="piren">
               <strong>ぴれん式</strong>
               <span>図に合わせた奇数・偶数回の立ち位置</span>
             </button>
+          </div>
+        </div>
+        <div id="initialShareSelection" class="selection-block hidden">
+          <h3>1回目の頭割り処理法を選択</h3>
+          <div id="initialShareButtons" class="radio-grid">
+            <label class="radio-option">
+              <input type="radio" name="initialShareMode" value="fixed">
+              <span>
+                <strong>左がTH、右がDPSで固定</strong>
+                <small>TH・H1側を左塔、DPS側を右塔に固定します</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="initialShareMode" value="pair">
+              <span>
+                <strong>ペアが扇なら左塔、ペアが円なら右塔</strong>
+                <small>修正前のロジックを使います</small>
+              </span>
+            </label>
           </div>
         </div>
         <div id="roleSelection" class="role-selection hidden">
