@@ -98,7 +98,7 @@ const SPREAD_METHODS = {
 };
 const INITIAL_SHARE_MODES = {
   pair: {
-    label: "ペアが扇なら左塔、ペアが円なら右塔",
+    label: "ペアを見て判断",
   },
   fixed: {
     label: "左がTH、右がDPSで固定",
@@ -390,8 +390,8 @@ function pairGroupsFor(strategy) {
 
 function initialShareClause(mode) {
   return mode === "pair"
-    ? "初回の頭割りは、ペアが扇なら左塔、ペアが円なら右塔。"
-    : "初回の頭割りは、左がTH、右がDPSで固定。";
+    ? "初回の頭割りは、ペアが扇なら左塔、ペアが円なら右塔です。"
+    : "初回の頭割りは、左がTH、右がDPSで固定です。";
 }
 
 function ktdnSpreadDescription() {
