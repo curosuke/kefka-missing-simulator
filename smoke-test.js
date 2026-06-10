@@ -511,7 +511,7 @@ async function run() {
       const h1Tower = assignmentFor(state.players[1], 5, "ktdn")?.tower;
       state.players = originalPlayers;
       return {
-        ok: h1Tower === 0 && mtTower === 1,
+        ok: mtTower === 0 && h1Tower === 1,
         mtTower,
         h1Tower,
       };
@@ -520,7 +520,7 @@ async function run() {
   });
   const ktdnGroupBEvenToOddPriority = JSON.parse(ktdnGroupBEvenToOddPriorityResult.result.value);
   if (!ktdnGroupBEvenToOddPriority.ok) {
-    throw new Error(`Invalid KTDN group B even-to-odd ranged-left priority handling: ${JSON.stringify(ktdnGroupBEvenToOddPriority)}`);
+    throw new Error(`Invalid KTDN group B even-to-odd south-to-opposite handling: ${JSON.stringify(ktdnGroupBEvenToOddPriority)}`);
   }
   const ktdnRound7IgnoreResult = await send("Runtime.evaluate", {
     expression: `JSON.stringify((() => {

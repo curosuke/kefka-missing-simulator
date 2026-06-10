@@ -473,10 +473,6 @@ function applyTowerOverride(player, round, tower) {
   return player.towerOverrides?.has(round) ? player.towerOverrides.get(round) : tower;
 }
 
-function towerPriorityBucket(player) {
-  return ["H1", "H2", "D3", "D4"].includes(player.id) ? 0 : 1;
-}
-
 function ktdnRound4Priority(player) {
   return ["healer", "ranged", "tank", "melee"].indexOf(player.role.category);
 }
@@ -518,18 +514,6 @@ function recordKtdnTowerPriority(occupied, round) {
 
     if (towerMembers.length !== 2) continue;
     if (markForRound(towerMembers[0], next) !== markForRound(towerMembers[1], next)) continue;
-    if (GROUP_ROUNDS.B.includes(next)) {
-      const ordered = [...towerMembers].sort((a, b) => {
-        const bucketDiff = towerPriorityBucket(a) - towerPriorityBucket(b);
-        if (bucketDiff !== 0) return bucketDiff;
-        if (a.y !== b.y) return a.y - b.y;
-        return a.id.localeCompare(b.id);
-      });
-      ordered[0].towerOverrides.set(next, 0);
-      ordered[1].towerOverrides.set(next, 1);
-      continue;
-    }
-
     const ordered = [...towerMembers].sort((a, b) => {
       if (a.y !== b.y) return a.y - b.y;
       return a.id.localeCompare(b.id);
