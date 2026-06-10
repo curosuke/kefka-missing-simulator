@@ -319,7 +319,7 @@ async function run() {
       state.players = originalPlayers;
       state.spread = originalSpread;
       return {
-        ok: mtTower === 1 && d1Tower === 0,
+        ok: mtTower === 0 && d1Tower === 1,
         mtTower,
         d1Tower,
       };
@@ -346,8 +346,8 @@ async function run() {
       state.players = originalPlayers;
       state.spread = originalSpread;
       return {
-        ok: mtAssignment?.tower === 1 && d1Assignment?.tower === 0 &&
-          mtAssignment?.name === "塔2・縦頭割り" && d1Assignment?.name === "塔1・縦頭割り",
+        ok: mtAssignment?.tower === 0 && d1Assignment?.tower === 1 &&
+          mtAssignment?.name === "塔1・縦頭割り" && d1Assignment?.name === "塔2・縦頭割り",
         mtAssignment,
         d1Assignment,
       };

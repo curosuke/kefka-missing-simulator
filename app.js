@@ -83,11 +83,11 @@ const SPREAD_METHODS = {
   },
   ktdn: {
     name: "KTDN式",
-    description: "初回はペア相手で塔を判断し、4回目の円扇判断だけ遠隔左・近接右を使います。2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。",
+    description: "初回の頭割りはTH左・DPS右で塔を判断し、4回目の円扇判断だけ遠隔左・近接右を使います。2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。",
   },
   ktdnPiren: {
     name: "KTDNぴれん式",
-    description: "優先度判断はKTDN式のまま、立ち位置だけぴれん式の座標を使います。",
+    description: "初回の頭割りはTH左・DPS右で塔を判断し、優先度判断はKTDN式のまま、立ち位置だけぴれん式の座標を使います。",
   },
   piren: {
     name: "ぴれん式",
@@ -214,10 +214,6 @@ function randomRoundMarks(round) {
 
 function nextRoundFor(player, afterRound = 0) {
   return GROUP_ROUNDS[player.group].find((round) => round > afterRound) || null;
-}
-
-function openingMarkFor(player) {
-  return player.marks[GROUP_ROUNDS[player.group][0]];
 }
 
 function createPlayers(strategy = "lean") {
@@ -384,14 +380,7 @@ function towerInfo(round) {
 }
 
 function ktdnInitialShareTower(player) {
-  const pair = YARN_PAIRS.find((ids) => ids.includes(player.id));
-  if (!pair) return null;
-  const partnerId = pair.find((id) => id !== player.id);
-  const partner = state.players.find((member) => member.id === partnerId);
-  const partnerMark = partner ? openingMarkFor(partner) : null;
-  if (partnerMark === "circle") return 1;
-  if (partnerMark === "fan") return 0;
-  return null;
+  return ["tank", "healer"].includes(player.role.category) ? 0 : 1;
 }
 
 function usesKtdnPriority(spread) {
