@@ -225,8 +225,7 @@ select { padding: 6px 8px; border: 1px solid #35425a; border-radius: 4px; backgr
   background: #172438;
 }
 .radio-option input {
-  margin-top: 4px;
-  accent-color: var(--cyan);
+  display: none;
 }
 .radio-option span {
   display: flex;

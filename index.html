@@ -123,6 +123,26 @@
             </button>
           </div>
         </div>
+        <div id="towerPrioritySelection" class="selection-block hidden">
+          <h3>偶数回の塔踏み優先判断を選択</h3>
+          <p class="modal-copy">奇数回目の塔を踏んだ後に予兆が重複したときの優先ルールを選びます。</p>
+          <div id="towerPriorityButtons" class="radio-grid">
+            <label class="radio-option">
+              <input type="radio" name="towerPriorityMode" value="yarnPiren">
+              <span>
+                <strong>優先順(H&gt;T&gt;近D&gt;遠D)</strong>
+                <small>偶数回の塔踏みは左から「ヒラ > タンク > 近接DPS > 遠隔DPS」で優先します</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="towerPriorityMode" value="ktdn">
+              <span>
+                <strong>南調整</strong>
+                <small>同じ塔内で予兆が重複した場合は、南側が次の塔踏みで反対の塔へ移動します</small>
+              </span>
+            </label>
+          </div>
+        </div>
         <div id="initialShareSelection" class="selection-block hidden">
           <h3>1回目の頭割り処理法を選択</h3>
           <div id="initialShareButtons" class="radio-grid">

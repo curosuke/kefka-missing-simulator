@@ -16,6 +16,8 @@ const UI = {
   strategyButtons: document.getElementById("strategyButtons"),
   spreadSelection: document.getElementById("spreadSelection"),
   spreadButtons: document.getElementById("spreadButtons"),
+  towerPrioritySelection: document.getElementById("towerPrioritySelection"),
+  towerPriorityButtons: document.getElementById("towerPriorityButtons"),
   initialShareSelection: document.getElementById("initialShareSelection"),
   initialShareButtons: document.getElementById("initialShareButtons"),
   roleSelection: document.getElementById("roleSelection"),
@@ -156,6 +158,7 @@ let state = {
 };
 let selectedStrategy = null;
 let selectedSpread = null;
+let selectedTowerPriorityMode = null;
 let selectedInitialShareMode = null;
 
 if (querySpeed > 0) {
@@ -288,10 +291,16 @@ function selectStrategy(strategy) {
   UI.selectionTitle.textContent = STRATEGIES[strategy].name;
   UI.selectionCopy.textContent = "次に、塔処理時の散開位置を選択してください。";
   selectedSpread = null;
+  selectedTowerPriorityMode = null;
   selectedInitialShareMode = null;
   for (const button of UI.spreadButtons.querySelectorAll(".spread-button")) {
     button.classList.remove("selected");
     button.setAttribute("aria-pressed", "false");
+  }
+  for (const option of UI.towerPriorityButtons.querySelectorAll(".radio-option")) {
+    option.classList.remove("selected");
+    const input = option.querySelector('input[type="radio"]');
+    if (input) input.checked = false;
   }
   for (const option of UI.initialShareButtons.querySelectorAll(".radio-option")) {
     option.classList.remove("selected");
@@ -299,6 +308,7 @@ function selectStrategy(strategy) {
     if (input) input.checked = false;
   }
   UI.spreadSelection.classList.remove("hidden");
+  UI.towerPrioritySelection.classList.add("hidden");
   UI.initialShareSelection.classList.add("hidden");
   UI.roleSelection.classList.add("hidden");
 }
@@ -323,6 +333,25 @@ function selectInitialShareMode(mode) {
   UI.roleSelection.classList.remove("hidden");
 }
 
+function defaultTowerPriorityModeForSpread(spread) {
+  if (spread === "ktdn" || spread === "ktdnPiren") return "ktdn";
+  if (spread === "piren") return "yarnPiren";
+  return null;
+}
+
+function selectTowerPriorityMode(mode) {
+  if (!selectedSpread || !["ktdn", "ktdnPiren", "piren"].includes(selectedSpread)) return;
+  const normalizedMode = mode === "ktdn" ? "ktdn" : "yarnPiren";
+  selectedTowerPriorityMode = normalizedMode;
+  for (const option of UI.towerPriorityButtons.querySelectorAll(".radio-option")) {
+    const input = option.querySelector('input[type="radio"]');
+    const selected = input?.value === normalizedMode;
+    option.classList.toggle("selected", selected);
+    if (input) input.checked = selected;
+  }
+  updateStrategyDescription();
+}
+
 function selectSpread(spread) {
   if (!selectedStrategy || !SPREAD_METHODS[spread]) return;
   selectedSpread = spread;
@@ -336,9 +365,21 @@ function selectSpread(spread) {
     const input = option.querySelector('input[type="radio"]');
     if (input) input.checked = false;
   }
+  for (const option of UI.towerPriorityButtons.querySelectorAll(".radio-option")) {
+    option.classList.remove("selected");
+    const input = option.querySelector('input[type="radio"]');
+    if (input) input.checked = false;
+  }
+  if (spread === "ktdn" || spread === "ktdnPiren" || spread === "piren") {
+    UI.towerPrioritySelection.classList.remove("hidden");
+    selectTowerPriorityMode(defaultTowerPriorityModeForSpread(spread));
+  } else {
+    selectedTowerPriorityMode = null;
+    UI.towerPrioritySelection.classList.add("hidden");
+  }
   if (isKtdnSpread(spread)) {
-    UI.selectionTitle.textContent = "1回目の頭割り処理法を選択";
-    UI.selectionCopy.textContent = "KTDN系は、1回目の頭割りだけ入る塔の優先度を選べます。";
+    UI.selectionTitle.textContent = "偶数回の塔踏み優先判断";
+    UI.selectionCopy.textContent = "KTDN系は、偶数回の塔踏みでの優先度判断と1回目の頭割りを続けて選べます。";
     UI.strategyName.textContent = `${STRATEGIES[selectedStrategy].name} / ${SPREAD_METHODS[spread].name} · 1238 / 4567`;
     UI.initialShareSelection.classList.remove("hidden");
     selectInitialShareMode("fixed");
@@ -357,10 +398,12 @@ function selectSpread(spread) {
 function resetSelection() {
   selectedStrategy = null;
   selectedSpread = null;
+  selectedTowerPriorityMode = null;
   selectedInitialShareMode = null;
   UI.selectionTitle.textContent = "攻略法を選択";
   UI.selectionCopy.textContent = "最初の先組・後組の決め方を選択してください。";
   UI.spreadSelection.classList.add("hidden");
+  UI.towerPrioritySelection.classList.add("hidden");
   UI.initialShareSelection.classList.add("hidden");
   UI.roleSelection.classList.add("hidden");
   for (const button of UI.strategyButtons.querySelectorAll(".strategy-button")) {
@@ -370,6 +413,11 @@ function resetSelection() {
   for (const button of UI.spreadButtons.querySelectorAll(".spread-button")) {
     button.classList.remove("selected");
     button.setAttribute("aria-pressed", "false");
+  }
+  for (const option of UI.towerPriorityButtons.querySelectorAll(".radio-option")) {
+    option.classList.remove("selected");
+    const input = option.querySelector('input[type="radio"]');
+    if (input) input.checked = false;
   }
   for (const option of UI.initialShareButtons.querySelectorAll(".radio-option")) {
     option.classList.remove("selected");
@@ -394,17 +442,34 @@ function initialShareClause(mode) {
     : "初回の頭割りは、左がTH、右がDPSで固定です。";
 }
 
+function towerPriorityClause(mode = selectedTowerPriorityMode || defaultTowerPriorityModeForSpread(selectedSpread)) {
+  if (mode === "ktdn") {
+    return "塔を踏んだ後に出る予兆が重複した場合は、南側が次の塔踏みで反対の塔へ移動します。";
+  }
+  if (mode === "yarnPiren") {
+    return "偶数回の塔踏みでは、左からヒラ > タンク > 近接DPS > 遠隔DPSで優先します。";
+  }
+  return "";
+}
+
 function ktdnSpreadDescription() {
   const initialClause = initialShareClause(selectedInitialShareMode || "fixed");
-  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。`;
+  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}${towerPriorityClause()}2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏みます。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。`;
 }
 
 function updateStrategyDescription() {
   if (!selectedStrategy || !selectedSpread) return;
+  const towerPriority = towerPriorityClause();
   const base = `${STRATEGIES[selectedStrategy].description} ${SPREAD_METHODS[selectedSpread].description}`;
-  UI.strategyDescription.textContent = selectedSpread === "ktdn"
-    ? `${STRATEGIES[selectedStrategy].description} ${ktdnSpreadDescription()}`
-    : base;
+  if (selectedSpread === "ktdn") {
+    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${ktdnSpreadDescription()}`;
+    return;
+  }
+  if (towerPriority) {
+    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${towerPriority} ${SPREAD_METHODS[selectedSpread].description}`;
+    return;
+  }
+  UI.strategyDescription.textContent = base;
 }
 
 function startGame(playerId, strategy = "lean", spread = "kt") {
@@ -1509,6 +1574,10 @@ UI.strategyButtons.addEventListener("click", (event) => {
 UI.spreadButtons.addEventListener("click", (event) => {
   const button = event.target.closest(".spread-button");
   if (button) selectSpread(button.dataset.spread);
+});
+UI.towerPriorityButtons.addEventListener("change", (event) => {
+  const input = event.target.closest('input[type="radio"]');
+  if (input) selectTowerPriorityMode(input.value);
 });
 UI.initialShareButtons.addEventListener("change", (event) => {
   const input = event.target.closest('input[type="radio"]');
