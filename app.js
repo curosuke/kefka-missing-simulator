@@ -87,7 +87,7 @@ const SPREAD_METHODS = {
   },
   ktdn: {
     name: "KTDN式",
-    description: "4回目の円扇判断だけ遠隔左・近接右を使います。2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。",
+    description: "4回目の円扇判断だけ遠隔左・近接右を使います。2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏み、同じ塔内で同予兆が重なった場合のみ南側の人が次の塔踏みで反対塔へ移動します。",
   },
   ktdnPiren: {
     name: "KTDNぴれん式",
@@ -447,18 +447,22 @@ function towerPriorityClause(mode = selectedTowerPriorityMode || defaultTowerPri
     return "同じ塔内で予兆が違う場合は次の塔踏みも同じ側の塔を踏み、次の塔も予兆が重複した場合、南側が次の塔踏みで反対の塔へ移動します。";
   }
   if (mode === "yarnPiren") {
-    return "偶数回の塔踏みでは、左からヒラ > タンク > 近接DPS > 遠隔DPSで優先します。";
+    return "左からヒラ > タンク > 近接DPS > 遠隔DPSで優先します。";
   }
   return "";
 }
 
 function ktdnSpreadDescription() {
   const initialClause = initialShareClause(selectedInitialShareMode || "fixed");
-  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}偶数階の塔踏みは、${towerPriorityClause()}8回目は左塔がstop1・bind1、右塔がstop2・bind2です。`;
+  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}偶数階の塔踏みは、${towerPriorityClause()}`;
 }
 
 function pirenSpreadDescription() {
   return `図を基準に、奇数回は塔周辺の縦配置、偶数回は左右対称の上下配置で処理します。偶数階の塔踏みは、${towerPriorityClause()}`;
+}
+
+function round8MarkerClause() {
+  return "8回目は左塔がstop1・bind1、右塔がstop2・bind2です。";
 }
 
 function updateStrategyDescription() {
@@ -466,18 +470,18 @@ function updateStrategyDescription() {
   const towerPriority = towerPriorityClause();
   const base = `${STRATEGIES[selectedStrategy].description} ${SPREAD_METHODS[selectedSpread].description}`;
   if (selectedSpread === "ktdn") {
-    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${ktdnSpreadDescription()}`;
+    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${ktdnSpreadDescription()}${round8MarkerClause()}`;
     return;
   }
   if (selectedSpread === "ktdnPiren" && towerPriority) {
-    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${towerPriority} ${SPREAD_METHODS[selectedSpread].description}`;
+    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${towerPriority} ${SPREAD_METHODS[selectedSpread].description} ${round8MarkerClause()}`;
     return;
   }
   if (selectedSpread === "piren") {
-    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${pirenSpreadDescription()}`;
+    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${pirenSpreadDescription()} ${round8MarkerClause()}`;
     return;
   }
-  UI.strategyDescription.textContent = base;
+  UI.strategyDescription.textContent = `${base} ${round8MarkerClause()}`;
 }
 
 function startGame(playerId, strategy = "lean", spread = "kt") {
