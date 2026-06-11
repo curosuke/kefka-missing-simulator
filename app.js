@@ -334,8 +334,7 @@ function selectInitialShareMode(mode) {
 }
 
 function defaultTowerPriorityModeForSpread(spread) {
-  if (spread === "ktdn" || spread === "ktdnPiren") return "ktdn";
-  if (spread === "piren") return "yarnPiren";
+  if (spread === "ktdn" || spread === "ktdnPiren" || spread === "piren") return "yarnPiren";
   return null;
 }
 

@@ -238,6 +238,7 @@ select { padding: 6px 8px; border: 1px solid #35425a; border-radius: 4px; backgr
 .role-selection { margin-top: 26px; padding-top: 24px; border-top: 1px solid rgba(112, 145, 195, 0.2); }
 .selection-block h3,
 .role-selection h3 { margin: 0 0 14px; font-size: 18px; }
+.initial-selection-heading h3 { margin: 0 0 14px; font-size: 18px; }
 .role-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
 .role-button {
   display: flex;

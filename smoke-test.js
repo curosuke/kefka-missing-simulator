@@ -251,13 +251,12 @@ async function run() {
       const priorityVisible = !UI.towerPrioritySelection.classList.contains("hidden");
       const initialShareVisible = !UI.initialShareSelection.classList.contains("hidden");
       const afterSpread = UI.roleSelection.classList.contains("hidden");
-      selectTowerPriorityMode("ktdn");
       const pair = pairIdFor("MT", "yarn");
       return {
         ok: before && spreadBefore && afterStrategy && !spreadAfterStrategy &&
           priorityVisible && initialShareVisible && !afterSpread &&
           selectedStrategy === "yarn" && selectedSpread === "ktdnPiren" && pair === "H1" &&
-          selectedTowerPriorityMode === "ktdn" &&
+          selectedTowerPriorityMode === "yarnPiren" &&
           selectedInitialShareMode === "fixed" &&
           UI.strategyName.textContent.includes("ヤーン式") &&
           UI.strategyName.textContent.includes("KTDNぴれん式") &&
