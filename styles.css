@@ -133,6 +133,26 @@ canvas { display: block; width: min(100%, 800px); height: auto; aspect-ratio: 1;
 #timeline li.active::before { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
 #timeline time { color: #71809b; font-variant-numeric: tabular-nums; }
 .controls-card { margin-top: auto; }
+.ad-card {
+  padding: 12px 14px 14px;
+  opacity: 0.9;
+}
+.ad-label {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+}
+.ad-slot {
+  min-height: 120px;
+  padding: 10px 0 0;
+}
+.ad-slot ins {
+  display: block;
+  min-height: 120px;
+  border: 1px dashed rgba(148, 174, 214, 0.22);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.015);
+}
 .key-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--muted); font-size: 11px; }
 kbd { min-width: 34px; padding: 5px 7px; border: 1px solid #3a465c; border-bottom-width: 2px; border-radius: 4px; background: #111827; color: #dce8fb; text-align: center; font-size: 9px; }
 .speed-control { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; color: var(--muted); font-size: 11px; }
@@ -276,6 +296,7 @@ select { padding: 6px 8px; border: 1px solid #35425a; border-radius: 4px; backgr
   .arena-panel { min-height: 0; }
   .side-panel { display: grid; grid-template-columns: 1fr 1fr; }
   .timeline-card { grid-row: span 2; }
+  .ad-card { grid-column: 1 / -1; }
 }
 @media (max-width: 680px) {
   .app-shell { padding: 12px; }
@@ -286,6 +307,7 @@ select { padding: 6px 8px; border: 1px solid #35425a; border-radius: 4px; backgr
   #nextDisplay { min-height: 3.6em; }
   .game-layout { padding-top: 12px; }
   .side-panel { display: flex; }
+  .ad-slot { min-height: 100px; }
   .strategy-buttons,
   .radio-grid,
   .role-buttons { grid-template-columns: repeat(2, 1fr); }
