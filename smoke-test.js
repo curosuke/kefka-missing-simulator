@@ -281,6 +281,37 @@ async function run() {
   if (!selection.ok) {
     throw new Error(`Invalid strategy selection flow: ${JSON.stringify(selection)}`);
   }
+  const pirenSelectionResult = await send("Runtime.evaluate", {
+    expression: `JSON.stringify((() => {
+      resetSelection();
+      selectStrategy("lean");
+      selectSpread("piren");
+      const defaultDescription = UI.strategyDescription.textContent;
+      selectTowerPriorityMode("ktdn");
+      const southDescription = UI.strategyDescription.textContent;
+      const originalState = state;
+      startGame("MT", "lean", "piren");
+      const storedMode = state.towerPriorityMode;
+      state.running = false;
+      state.finished = true;
+      state = originalState;
+      return {
+        ok: selectedTowerPriorityMode === "ktdn" &&
+          defaultDescription.includes("ヒラ > タンク > 近接DPS > 遠隔DPS") &&
+          southDescription.includes("南側が次の塔踏みで反対の塔へ移動します") &&
+          storedMode === "ktdn",
+        defaultDescription,
+        southDescription,
+        storedMode,
+        selectedTowerPriorityMode,
+      };
+    })())`,
+    returnByValue: true,
+  });
+  const pirenSelection = JSON.parse(pirenSelectionResult.result.value);
+  if (!pirenSelection.ok) {
+    throw new Error(`Invalid piren tower priority selection flow: ${JSON.stringify(pirenSelection)}`);
+  }
   const shareCountResult = await send("Runtime.evaluate", {
     expression: `JSON.stringify((() => {
       const original = state.players.map((player) => ({ x: player.x, y: player.y }));

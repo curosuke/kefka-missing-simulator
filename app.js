@@ -154,6 +154,7 @@ let state = {
   bannerUntil: 0,
   strategy: null,
   spread: null,
+  towerPriorityMode: null,
   initialShareMode: "pair",
 };
 let selectedStrategy = null;
@@ -443,7 +444,7 @@ function initialShareClause(mode) {
 
 function towerPriorityClause(mode = selectedTowerPriorityMode || defaultTowerPriorityModeForSpread(selectedSpread)) {
   if (mode === "ktdn") {
-    return "塔を踏んだ後に出る予兆が重複した場合は、南側が次の塔踏みで反対の塔へ移動します。";
+    return "同じ塔内で予兆が違う場合は次の塔踏みも同じ側の塔を踏み、次の塔も予兆が重複した場合、南側が次の塔踏みで反対の塔へ移動します。";
   }
   if (mode === "yarnPiren") {
     return "偶数回の塔踏みでは、左からヒラ > タンク > 近接DPS > 遠隔DPSで優先します。";
@@ -453,7 +454,11 @@ function towerPriorityClause(mode = selectedTowerPriorityMode || defaultTowerPri
 
 function ktdnSpreadDescription() {
   const initialClause = initialShareClause(selectedInitialShareMode || "fixed");
-  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}${towerPriorityClause()}2回目以降は、連続して塔を踏む場合は基本的に前回いた塔をそのまま踏みます。8回目は左塔がstop1・bind1、右塔がstop2・bind2です。`;
+  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}偶数階の塔踏みは、${towerPriorityClause()}8回目は左塔がstop1・bind1、右塔がstop2・bind2です。`;
+}
+
+function pirenSpreadDescription() {
+  return `図を基準に、奇数回は塔周辺の縦配置、偶数回は左右対称の上下配置で処理します。偶数階の塔踏みは、${towerPriorityClause()}`;
 }
 
 function updateStrategyDescription() {
@@ -464,8 +469,12 @@ function updateStrategyDescription() {
     UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${ktdnSpreadDescription()}`;
     return;
   }
-  if (towerPriority) {
+  if (selectedSpread === "ktdnPiren" && towerPriority) {
     UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${towerPriority} ${SPREAD_METHODS[selectedSpread].description}`;
+    return;
+  }
+  if (selectedSpread === "piren") {
+    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${pirenSpreadDescription()}`;
     return;
   }
   UI.strategyDescription.textContent = base;
@@ -496,6 +505,7 @@ function startGame(playerId, strategy = "lean", spread = "kt") {
     bannerUntil: 0,
     strategy: activeStrategy,
     spread: activeSpread,
+    towerPriorityMode: selectedTowerPriorityMode || defaultTowerPriorityModeForSpread(activeSpread),
     initialShareMode: selectedInitialShareMode || "pair",
   };
   const player = getPlayer();
@@ -534,8 +544,12 @@ function ktdnInitialShareTower(player, mode = state.initialShareMode || "pair") 
   return partner && markForRound(partner, 1) === "fan" ? 0 : 1;
 }
 
-function usesKtdnPriority(spread) {
+function usesKtdnSpreadRules(spread) {
   return spread === "ktdn" || spread === "ktdnPiren";
+}
+
+function usesSouthAdjustPriority(mode = state.towerPriorityMode || defaultTowerPriorityModeForSpread(state.spread)) {
+  return mode === "ktdn";
 }
 
 function usesPirenLayout(spread) {
@@ -668,7 +682,7 @@ function markSide(player, round, spread = state.spread || "kt") {
   const peers = state.players
     .filter((member) => member.group === info.group && markForRound(member, round) === markForRound(player, round))
     .sort((a, b) => {
-      if (usesKtdnPriority(spread) && round === 4 && info.group === "B") {
+      if (usesKtdnSpreadRules(spread) && round === 4 && info.group === "B") {
         const bucketDiff = ktdnRound4Priority(a) - ktdnRound4Priority(b);
         if (bucketDiff !== 0) return bucketDiff;
       } else {
@@ -687,7 +701,7 @@ function ktdnAssignmentFor(player, round, spread = state.spread || "kt") {
   const mark = markForRound(player, round);
   const assignTower = usesPirenLayout(spread) ? pirenTowerAssignment : ktTowerAssignment;
   if (info.odd) {
-    if (mark === "share" && usesKtdnPriority(spread) && round === 1) {
+    if (mark === "share" && usesKtdnSpreadRules(spread) && round === 1) {
       const tower = ktdnInitialShareTower(player);
       if (tower !== null) {
         return assignTower(mark, true, applyTowerOverride(player, round, tower));
@@ -721,7 +735,7 @@ function pirenAssignmentFor(player, round, spread = state.spread || "kt") {
 
 function assignmentFor(player, round, spread = state.spread || "kt") {
   if (spread === "piren") return pirenAssignmentFor(player, round, spread);
-  if (usesKtdnPriority(spread)) return ktdnAssignmentFor(player, round, spread);
+  if (usesKtdnSpreadRules(spread)) return ktdnAssignmentFor(player, round, spread);
   return ktdnAssignmentFor(player, round, spread);
 }
 
@@ -954,7 +968,7 @@ function resolveTower(round) {
     fail(`${round}回目：${hazardFailure}`);
     return;
   }
-  if (usesKtdnPriority(state.spread)) recordKtdnTowerPriority(occupied, round);
+  if (usesSouthAdjustPriority()) recordKtdnTowerPriority(occupied, round);
   for (const member of active) {
     member.stacks -= 1;
     member.lastSoaked = round;
