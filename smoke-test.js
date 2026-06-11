@@ -193,7 +193,7 @@ async function run() {
         spellEffects: state.spellEffects,
         time: state.time,
       };
-      for (const spread of ["kt", "ktdn", "ktdnPiren", "piren"]) {
+      for (const spread of ["kt", "ktdn", "ktdnPiren", "dn", "piren"]) {
         for (let attempt = 0; attempt < 80; attempt += 1) {
           const strategy = attempt % 2 ? "yarn" : "lean";
           state.players = createPlayers(strategy);
@@ -311,6 +311,84 @@ async function run() {
   const pirenSelection = JSON.parse(pirenSelectionResult.result.value);
   if (!pirenSelection.ok) {
     throw new Error(`Invalid piren tower priority selection flow: ${JSON.stringify(pirenSelection)}`);
+  }
+  const dnSelectionResult = await send("Runtime.evaluate", {
+    expression: `JSON.stringify((() => {
+      resetSelection();
+      selectStrategy("yarn");
+      selectSpread("dn");
+      const defaultDescription = UI.strategyDescription.textContent;
+      selectTowerPriorityMode("ktdn");
+      const keepPreviousDescription = UI.strategyDescription.textContent;
+      const keepPreviousCopy = UI.towerPriorityButtons
+        .querySelector('input[value="ktdn"]')
+        ?.closest(".radio-option")
+        ?.querySelector("small")
+        ?.textContent || "";
+      const originalState = state;
+      startGame("MT", "yarn", "dn");
+      const storedMode = state.towerPriorityMode;
+      const storedSpread = state.spread;
+      state.running = false;
+      state.finished = true;
+      state = originalState;
+      return {
+        ok: selectedSpread === "dn" &&
+          selectedTowerPriorityMode === "ktdn" &&
+          defaultDescription.includes("左からヒラ > タンク > 近接DPS > 遠隔DPS") &&
+          keepPreviousDescription.includes("前回と別々の塔を踏んでいた場合は同じ側の塔を踏み") &&
+          keepPreviousCopy.includes("前回と別々の塔を踏んでいた場合は同じ側を踏み") &&
+          storedMode === "ktdn" && storedSpread === "dn",
+        defaultDescription,
+        keepPreviousDescription,
+        keepPreviousCopy,
+        storedMode,
+        storedSpread,
+        selectedSpread,
+        selectedTowerPriorityMode,
+      };
+    })())`,
+    returnByValue: true,
+  });
+  const dnSelection = JSON.parse(dnSelectionResult.result.value);
+  if (!dnSelection.ok) {
+    throw new Error(`Invalid DN tower priority selection flow: ${JSON.stringify(dnSelection)}`);
+  }
+  const dnPriorityResult = await send("Runtime.evaluate", {
+    expression: `JSON.stringify((() => {
+      const originalPlayers = state.players;
+      const originalSpread = state.spread;
+      const originalMode = state.towerPriorityMode;
+      state.spread = "dn";
+      state.towerPriorityMode = "ktdn";
+      state.players = [
+        { id: "MT", group: "A", marks: { 2: "fan" }, role: { category: "tank" }, lastTower: 0, lastBossDistance: 120 },
+        { id: "H1", group: "A", marks: { 2: "fan" }, role: { category: "healer" }, lastTower: 0, lastBossDistance: 180 },
+      ];
+      const sharedMt = markSide(state.players[0], 2, "dn");
+      const sharedH1 = markSide(state.players[1], 2, "dn");
+      state.players = [
+        { id: "MT", group: "A", marks: { 2: "fan" }, role: { category: "tank" }, lastTower: 0, lastBossDistance: 120 },
+        { id: "H1", group: "A", marks: { 2: "fan" }, role: { category: "healer" }, lastTower: 1, lastBossDistance: 180 },
+      ];
+      const splitMt = markSide(state.players[0], 2, "dn");
+      const splitH1 = markSide(state.players[1], 2, "dn");
+      state.players = originalPlayers;
+      state.spread = originalSpread;
+      state.towerPriorityMode = originalMode;
+      return {
+        ok: sharedMt === 0 && sharedH1 === 1 && splitMt === 0 && splitH1 === 1,
+        sharedMt,
+        sharedH1,
+        splitMt,
+        splitH1,
+      };
+    })())`,
+    returnByValue: true,
+  });
+  const dnPriority = JSON.parse(dnPriorityResult.result.value);
+  if (!dnPriority.ok) {
+    throw new Error(`Invalid DN keep-previous tower priority handling: ${JSON.stringify(dnPriority)}`);
   }
   const shareCountResult = await send("Runtime.evaluate", {
     expression: `JSON.stringify((() => {
@@ -640,7 +718,7 @@ async function run() {
           ranged,
         };
       };
-      const spreads = ["kt", "ktdn", "ktdnPiren", "piren"];
+      const spreads = ["kt", "ktdn", "ktdnPiren", "dn", "piren"];
       const results = Object.fromEntries(spreads.map((spread) => [spread, verifySpread(spread)]));
       return {
         ok: spreads.every((spread) => results[spread].ok),

@@ -124,6 +124,10 @@
               <strong>KT式</strong>
               <span>奇数回は左右の塔へ寄せ、偶数回は内側扇と外側円で処理</span>
             </button>
+            <button class="strategy-button spread-button" data-spread="dn">
+              <strong>はいじあ/DN式</strong>
+              <span>奇数回は扇・円がぴれん式ベース、頭割りと偶数回はDN式の位置で処理</span>
+            </button>
           </div>
         </div>
         <div id="initialShareSelection" class="selection-block hidden">
@@ -147,8 +151,7 @@
         </div>
         <div id="towerPrioritySelection" class="selection-block hidden">
           <h3>偶数回の塔踏み優先判断を選択</h3>
-          <p class="modal-copy">※ 連続して次の奇数回の塔を踏む場合（塔8回目はマーカー判断）</p>
-          <p class="modal-copy">奇数回目の塔を踏んだ後に出る予兆（次の偶数回目の塔踏みの移動先）の優先ルールを選びます。</p>
+          <p class="modal-copy">奇数回目の塔を踏んだ後に出る予兆（次の偶数回目の塔踏みの移動先）の優先ルールを選びます。<br/>（塔8回目はプレイヤーが自分でbind or stopマーカーを付与して対応する塔へ移動）</p>
           <div id="towerPriorityButtons" class="radio-grid">
             <label class="radio-option">
               <input type="radio" name="towerPriorityMode" value="yarnPiren">

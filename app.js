@@ -93,6 +93,10 @@ const SPREAD_METHODS = {
     name: "KTDNぴれん式",
     description: "優先度判断はKTDN式のまま、立ち位置だけぴれん式の座標を使います。",
   },
+  dn: {
+    name: "はいじあ/DN式",
+    description: "奇数回は扇・円がぴれん式ベース、頭割りと偶数回はDN式の専用立ち位置で処理します。",
+  },
   piren: {
     name: "ぴれん式",
     description: "図を基準に、奇数回は塔周辺の縦配置、偶数回は左右対称の上下配置で処理します。",
@@ -130,6 +134,7 @@ const TARGET_MARKER_LABEL = {
 const TOWER_PRIORITY_BY_SPREAD = {
   kt: ["healer", "tank", "melee", "ranged"],
   ktdn: ["healer", "tank", "melee", "ranged"],
+  dn: ["healer", "tank", "melee", "ranged"],
   piren: ["healer", "tank", "melee", "ranged"],
 };
 const keys = new Set();
@@ -256,6 +261,8 @@ function createPlayers(strategy = "lean") {
       wanderPhase: index * 1.73 + Math.random() * 0.8,
       tower: null,
       towerOverrides: new Map(),
+      lastTower: null,
+      lastBossDistance: null,
     };
   });
   for (const [group, rounds] of Object.entries(GROUP_ROUNDS)) {
@@ -335,12 +342,29 @@ function selectInitialShareMode(mode) {
 }
 
 function defaultTowerPriorityModeForSpread(spread) {
-  if (spread === "ktdn" || spread === "ktdnPiren" || spread === "piren") return "yarnPiren";
+  if (spread === "ktdn" || spread === "ktdnPiren" || spread === "dn" || spread === "piren") return "yarnPiren";
   return null;
 }
 
+function towerPriorityOptionCopy(mode, spread = selectedSpread) {
+  if (mode === "yarnPiren") {
+    return "偶数回の塔踏みは左から「ヒラ > タンク > 近接DPS > 遠隔DPS」で優先します";
+  }
+  if (spread === "dn") {
+    return "前回と別々の塔を踏んでいた場合は同じ側を踏み、同じ塔だった場合はボスから遠い側が反対の塔へ移動します";
+  }
+  return "同じ塔内で予兆が異なる場合は次の塔踏みも同じ側の塔を踏み、予兆が重複した場合は南側が次の塔踏みで反対の塔へ移動します";
+}
+
+function updateTowerPriorityOptionCopy(spread = selectedSpread) {
+  for (const input of UI.towerPriorityButtons.querySelectorAll('input[type="radio"]')) {
+    const small = input.closest(".radio-option")?.querySelector("small");
+    if (small) small.textContent = towerPriorityOptionCopy(input.value, spread);
+  }
+}
+
 function selectTowerPriorityMode(mode) {
-  if (!selectedSpread || !["ktdn", "ktdnPiren", "piren"].includes(selectedSpread)) return;
+  if (!selectedSpread || !["ktdn", "ktdnPiren", "dn", "piren"].includes(selectedSpread)) return;
   const normalizedMode = mode === "ktdn" ? "ktdn" : "yarnPiren";
   selectedTowerPriorityMode = normalizedMode;
   for (const option of UI.towerPriorityButtons.querySelectorAll(".radio-option")) {
@@ -349,6 +373,7 @@ function selectTowerPriorityMode(mode) {
     option.classList.toggle("selected", selected);
     if (input) input.checked = selected;
   }
+  updateTowerPriorityOptionCopy(selectedSpread);
   updateStrategyDescription();
 }
 
@@ -370,8 +395,9 @@ function selectSpread(spread) {
     const input = option.querySelector('input[type="radio"]');
     if (input) input.checked = false;
   }
-  if (spread === "ktdn" || spread === "ktdnPiren" || spread === "piren") {
+  if (spread === "ktdn" || spread === "ktdnPiren" || spread === "dn" || spread === "piren") {
     UI.towerPrioritySelection.classList.remove("hidden");
+    updateTowerPriorityOptionCopy(spread);
     selectTowerPriorityMode(defaultTowerPriorityModeForSpread(spread));
   } else {
     selectedTowerPriorityMode = null;
@@ -444,6 +470,9 @@ function initialShareClause(mode) {
 
 function towerPriorityClause(mode = selectedTowerPriorityMode || defaultTowerPriorityModeForSpread(selectedSpread)) {
   if (mode === "ktdn") {
+    if (selectedSpread === "dn") {
+      return "前回と別々の塔を踏んでいた場合は同じ側の塔を踏み、同じ塔だった場合はボスから遠い側が反対の塔へ移動します。";
+    }
     return "同じ塔内で予兆が違う場合は次の塔踏みも同じ側の塔を踏み、次の塔も予兆が重複した場合、南側が次の塔踏みで反対の塔へ移動します。";
   }
   if (mode === "yarnPiren") {
@@ -459,6 +488,10 @@ function ktdnSpreadDescription() {
 
 function pirenSpreadDescription() {
   return `ぴれん式の立ち位置で処理します。偶数階の塔踏みは、${towerPriorityClause()}`;
+}
+
+function dnSpreadDescription() {
+  return `はいじあ/DN式の立ち位置で処理します。偶数階の塔踏みは、${towerPriorityClause()}`;
 }
 
 function round8MarkerClause() {
@@ -479,6 +512,10 @@ function updateStrategyDescription() {
   }
   if (selectedSpread === "piren") {
     UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${pirenSpreadDescription()} ${round8MarkerClause()}`;
+    return;
+  }
+  if (selectedSpread === "dn") {
+    UI.strategyDescription.textContent = `${STRATEGIES[selectedStrategy].description} ${dnSpreadDescription()} ${round8MarkerClause()}`;
     return;
   }
   UI.strategyDescription.textContent = `${base} ${round8MarkerClause()}`;
@@ -552,8 +589,18 @@ function usesKtdnSpreadRules(spread) {
   return spread === "ktdn" || spread === "ktdnPiren";
 }
 
-function usesSouthAdjustPriority(mode = state.towerPriorityMode || defaultTowerPriorityModeForSpread(state.spread)) {
-  return mode === "ktdn";
+function usesSouthAdjustPriority(
+  spread = state.spread || "kt",
+  mode = state.towerPriorityMode || defaultTowerPriorityModeForSpread(state.spread)
+) {
+  return spread !== "dn" && mode === "ktdn";
+}
+
+function usesDnKeepPreviousPriority(
+  spread = state.spread || "kt",
+  mode = state.towerPriorityMode || defaultTowerPriorityModeForSpread(state.spread)
+) {
+  return spread === "dn" && mode === "ktdn";
 }
 
 function usesPirenLayout(spread) {
@@ -627,6 +674,33 @@ function pirenTowerAssignment(mark, odd, tower) {
     : { tower: 1, x: 500, y: 565, name: "塔2・下円" };
 }
 
+function dnTowerAssignment(mark, odd, tower) {
+  if (odd) {
+    if (mark === "fan") {
+      return tower === 0
+        ? { tower: 0, x: 300, y: 560, name: "塔1・左誘導扇" }
+        : { tower: 1, x: 500, y: 560, name: "塔2・右誘導扇" };
+    }
+    if (mark === "circle") {
+      return tower === 0
+        ? { tower: 0, x: 300, y: 560, name: "塔1・下円" }
+        : { tower: 1, x: 500, y: 560, name: "塔2・下円" };
+    }
+    return tower === 0
+      ? { tower: 0, x: 300, y: 500, name: "塔1・縦頭割り" }
+      : { tower: 1, x: 487, y: 443, name: "塔2・縦頭割り" };
+  }
+
+  if (mark === "fan") {
+    return tower === 0
+      ? { tower: 0, x: 313, y: 443, name: "塔1・内側扇" }
+      : { tower: 1, x: 487, y: 443, name: "塔2・内側扇" };
+  }
+  return tower === 0
+    ? { tower: 0, x: 300, y: 565, name: "塔1・6時円" }
+    : { tower: 1, x: 500, y: 565, name: "塔2・6時円" };
+}
+
 function applyTowerOverride(player, round, tower) {
   return player.towerOverrides?.has(round) ? player.towerOverrides.get(round) : tower;
 }
@@ -696,6 +770,18 @@ function markSide(player, round, spread = state.spread || "kt") {
       }
       return a.id.localeCompare(b.id);
     });
+  if (usesDnKeepPreviousPriority(spread) && peers.length === 2 && peers.every((member) => member.lastTower !== null)) {
+    if (peers[0].lastTower !== peers[1].lastTower) {
+      return player.lastTower;
+    }
+    const sharedTower = player.lastTower;
+    const ordered = [...peers].sort((a, b) => {
+      const distanceDifference = (b.lastBossDistance ?? -Infinity) - (a.lastBossDistance ?? -Infinity);
+      if (Math.abs(distanceDifference) > 0.001) return distanceDifference;
+      return peers.indexOf(b) - peers.indexOf(a);
+    });
+    return ordered[0] === player ? 1 - sharedTower : sharedTower;
+  }
   return peers.indexOf(player);
 }
 
@@ -737,7 +823,23 @@ function pirenAssignmentFor(player, round, spread = state.spread || "kt") {
   return pirenTowerAssignment(mark, false, applyTowerOverride(player, round, markSide(player, round, spread)));
 }
 
+function dnAssignmentFor(player, round, spread = state.spread || "kt") {
+  const info = towerInfo(round);
+  if (player.group !== info.group) return null;
+  const mark = markForRound(player, round);
+  if (info.odd) {
+    const defaultTower = mark === "fan"
+      ? 0
+      : mark === "circle"
+        ? 1
+        : markSide(player, round, spread);
+    return dnTowerAssignment(mark, true, applyTowerOverride(player, round, defaultTower));
+  }
+  return dnTowerAssignment(mark, false, applyTowerOverride(player, round, markSide(player, round, spread)));
+}
+
 function assignmentFor(player, round, spread = state.spread || "kt") {
+  if (spread === "dn") return dnAssignmentFor(player, round, spread);
   if (spread === "piren") return pirenAssignmentFor(player, round, spread);
   if (usesKtdnSpreadRules(spread)) return ktdnAssignmentFor(player, round, spread);
   return ktdnAssignmentFor(player, round, spread);
@@ -766,6 +868,23 @@ function targetMarkerFor(player) {
 
 function supportPosition(player, round, spread = state.spread || "kt") {
   const info = towerInfo(round);
+  if (spread === "dn") {
+    const positions = info.odd
+      ? {
+          tank: [320, 430],
+          healer: [300, 600],
+          melee: [450, 420],
+          ranged: [455, 415],
+        }
+      : {
+          tank: [320, 320],
+          healer: [225, 400],
+          melee: [480, 320],
+          ranged: [575, 400],
+        };
+    const [x, y] = positions[player.role.category];
+    return { x, y };
+  }
   if (usesPirenLayout(spread)) {
     const positions = info.odd
       ? {
@@ -973,6 +1092,12 @@ function resolveTower(round) {
     return;
   }
   if (usesSouthAdjustPriority()) recordKtdnTowerPriority(occupied, round);
+  occupied.forEach((towerMembers, towerIndex) => {
+    for (const member of towerMembers) {
+      member.lastTower = towerIndex;
+      member.lastBossDistance = distance(member, BOSS);
+    }
+  });
   for (const member of active) {
     member.stacks -= 1;
     member.lastSoaked = round;
