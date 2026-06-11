@@ -454,11 +454,11 @@ function towerPriorityClause(mode = selectedTowerPriorityMode || defaultTowerPri
 
 function ktdnSpreadDescription() {
   const initialClause = initialShareClause(selectedInitialShareMode || "fixed");
-  return `4回目の円扇判断だけ遠隔左・近接右を使います。${initialClause}偶数階の塔踏みは、${towerPriorityClause()}`;
+  return `${initialClause}偶数階の塔踏みは、${towerPriorityClause()}4回目の円扇判断だけ遠隔左・近接右を使います。`;
 }
 
 function pirenSpreadDescription() {
-  return `図を基準に、奇数回は塔周辺の縦配置、偶数回は左右対称の上下配置で処理します。偶数階の塔踏みは、${towerPriorityClause()}`;
+  return `ぴれん式の立ち位置で処理します。偶数階の塔踏みは、${towerPriorityClause()}`;
 }
 
 function round8MarkerClause() {

@@ -108,22 +108,41 @@
         <div id="spreadSelection" class="selection-block hidden">
           <h3>散開位置を選択</h3>
           <div id="spreadButtons" class="strategy-buttons">
-            <button class="strategy-button spread-button" data-spread="kt">
-              <strong>KT式</strong>
-              <span>奇数回は左右の塔へ寄せ、偶数回は内側扇と外側円で処理</span>
-            </button>
-            <button class="strategy-button spread-button" data-spread="ktdn">
-              <strong>KTDN式</strong>
-              <span>初回の頭割りは選択式。4回目だけ遠隔左・近接右</span>
+            <button class="strategy-button spread-button" data-spread="piren">
+              <strong>ぴれん式</strong>
+              <span>図に合わせた奇数・偶数回の立ち位置</span>
             </button>
             <button class="strategy-button spread-button" data-spread="ktdnPiren">
               <strong>KTDNぴれん式</strong>
               <span>初回の頭割りは選択式。KTDN式の優先度判断のまま、立ち位置だけぴれん式</span>
             </button>
-            <button class="strategy-button spread-button" data-spread="piren">
-              <strong>ぴれん式</strong>
-              <span>図に合わせた奇数・偶数回の立ち位置</span>
+            <button class="strategy-button spread-button" data-spread="ktdn">
+              <strong>KTDN式</strong>
+              <span>初回の頭割りは選択式。4回目だけ遠隔左・近接右</span>
             </button>
+            <button class="strategy-button spread-button" data-spread="kt">
+              <strong>KT式</strong>
+              <span>奇数回は左右の塔へ寄せ、偶数回は内側扇と外側円で処理</span>
+            </button>
+          </div>
+        </div>
+        <div id="initialShareSelection" class="selection-block hidden">
+          <h3>1回目の頭割り処理法を選択</h3>
+          <div id="initialShareButtons" class="radio-grid">
+            <label class="radio-option">
+              <input type="radio" name="initialShareMode" value="fixed">
+              <span>
+                <strong>左がTH、右がDPSで固定</strong>
+                <small>Tank/Healerは左塔、DPSは右塔に固定します</small>
+              </span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="initialShareMode" value="pair">
+              <span>
+                <strong>ペアを見て判断</strong>
+                <small>ペアが扇なら左塔、ペアが円なら右塔に入ります</small>
+              </span>
+            </label>
           </div>
         </div>
         <div id="towerPrioritySelection" class="selection-block hidden">
@@ -143,25 +162,6 @@
               <span>
                 <strong>南調整</strong>
                 <small>同じ塔内で予兆が異なる場合は次の塔踏みも同じ側の塔を踏み、予兆が重複した場合は南側が次の塔踏みで反対の塔へ移動します</small>
-              </span>
-            </label>
-          </div>
-        </div>
-        <div id="initialShareSelection" class="selection-block hidden">
-          <h3>1回目の頭割り処理法を選択</h3>
-          <div id="initialShareButtons" class="radio-grid">
-            <label class="radio-option">
-              <input type="radio" name="initialShareMode" value="fixed">
-              <span>
-                <strong>左がTH、右がDPSで固定</strong>
-                <small>Tank/Healerは左塔、DPSは右塔に固定します</small>
-              </span>
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="initialShareMode" value="pair">
-              <span>
-                <strong>ペアを見て判断</strong>
-                <small>ペアが扇なら左塔、ペアが円なら右塔に入ります</small>
               </span>
             </label>
           </div>
