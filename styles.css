@@ -185,6 +185,23 @@ select { padding: 6px 8px; border: 1px solid #35425a; border-radius: 4px; backgr
   background: linear-gradient(145deg, #121a28, #0a101a);
   box-shadow: 0 30px 100px rgba(0,0,0,0.55);
 }
+.modal-origin-note {
+  margin: 2px 0 16px;
+  color: #75839a;
+  font-size: 11px;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
+}
+.modal-origin-note a {
+  color: #90a6c8;
+  text-decoration: none;
+  word-break: break-all;
+}
+.modal-origin-note a:hover { text-decoration: underline; }
+.modal-origin-note span {
+  display: block;
+  margin-top: 4px;
+}
 .modal-copy { margin: 10px 0 24px; color: #9baac0; line-height: 1.75; font-size: 13px; }
 .strategy-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .strategy-button {
